@@ -7,20 +7,23 @@ load_dotenv()
 
 
 class Translator:
+    # Google Translate API inicializálása
     def __init__(self):
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = os.getenv("GOOGLE_CREDENTIALS_PATH", "credentials.json")
         self.client = translate.Client()
 
+    # Elérhető nyelvek lekérdezése
     def get_language(self):
         languages = self.client.get_languages()
         return {lang["language"]: lang["name"] for lang in languages}
 
+    # Fordítás végrehajtás logikája
     def translate_text(self, text, target_language, source_language=None):
         if not text:
             return {"translated_text": "", "detected_language": None, "input_text": ""}
 
-        # Ha a forrás nyelv üres string vagy "auto", állítsuk None-ra
-        if source_language == "" or source_language == "auto" or source_language == "Automatic":
+        # Ha a forrás nyelv üres string vagy "Automatic", állítsuk None-ra
+        if source_language == "" or source_language == "Automatic":
             source_language = None
 
         try:

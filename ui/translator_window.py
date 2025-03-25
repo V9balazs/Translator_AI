@@ -6,6 +6,7 @@ from PyQt6.QtWidgets import QApplication, QMainWindow
 
 
 class TranslatorWindow(QMainWindow):
+    # A főablak inicializálása
     def __init__(self, translator):
         super().__init__()
         self.translator = translator
@@ -17,22 +18,24 @@ class TranslatorWindow(QMainWindow):
 
     # Legördülő menübe nyelvek beállítása
     def setup_language_combos(self):
+        self.Source_Language.clear()
+        self.Target_Language.clear()
+
         self.Source_Language.addItem("Automatic")
 
         for code, name in self.languages.items():
-            self.Source_Language.addItem(name)
-            self.Target_Language.addItem(name)
+            self.Source_Language.addItem(name, code)
+            self.Target_Language.addItem(name, code)
 
-        en_index = self.Source_Language.findData("en")
-        if en_index >= 0:
-            self.Source_Language.setCurrentIndex(en_index)
-
+    # Kattintás események összekapcsolása
     def connect_signals(self):
         self.Translate_Button.clicked.connect(self.translate_text)
 
+    # Fordítás folyamat kezdeményezése
     @pyqtSlot()
     def translate_text(self):
         source_text = self.Source_Text.toPlainText()
+
         source_lang = self.Source_Language.currentData()
         if source_lang == "auto" or source_lang == "Automatic" or not source_lang:
             source_lang = None
