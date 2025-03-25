@@ -63,7 +63,7 @@
      </rect>
     </property>
    </widget>
-   <widget class="QTextEdit" name="Target_text">
+   <widget class="QTextEdit" name="Target_Text">
     <property name="geometry">
      <rect>
       <x>10</x>

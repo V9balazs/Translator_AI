@@ -33,18 +33,31 @@ class TranslatorWindow(QMainWindow):
     @pyqtSlot()
     def translate_text(self):
         source_text = self.Source_Text.toPlainText()
-        source_lang = self.Source_Language.currentText()
-        target_lang = self.Target_Language.currentText()
+        source_lang = self.Source_Language.currentData()
+        if source_lang == "auto" or source_lang == "Automatic" or not source_lang:
+            source_lang = None
+
+        target_lang = self.Target_Language.currentData()
 
         if not source_text:
             return
 
-        result = self.translator.translate_text(source_text, target_lang, source_lang)
+        try:
+            # Fordítás végrehajtása
+            result = self.translator.translate_text(
+                source_text, target_language=target_lang, source_language=source_lang
+            )
 
-        self.Target_text.setPlainText(result["translated_text"])
+            # Eredmény megjelenítése
+            self.Target_Text.setPlainText(result["translated_text"])
 
-        if not source_lang and result["detected_language"]:
-            detected = result["detected_language"]
-            index = self.Source_Language.findData(detected)
-            if index >= 0:
-                self.Target_Language.setCurrentIndex(index)
+            # Ha automatikus felismerés volt, frissítsük a forrás nyelvet
+            if not source_lang and result["detected_language"]:
+                detected = result["detected_language"]
+                index = self.Source_Language.findData(detected)
+                if index > 0:  # 0 az "Automatikus felismerés"
+                    self.Source_Language.setCurrentIndex(index)
+
+        except Exception as e:
+            self.Target_Text.setPlainText(f"Hiba történt: {str(e)}")
+            print(f"Fordítási hiba: {str(e)}")

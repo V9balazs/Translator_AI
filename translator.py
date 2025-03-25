@@ -17,12 +17,24 @@ class Translator:
 
     def translate_text(self, text, target_language, source_language=None):
         if not text:
-            return ""
+            return {"translated_text": "", "detected_language": None, "input_text": ""}
 
-        result = self.client.translate(text, target_language=target_language, source_language=source_language)
+        # Ha a forrás nyelv üres string vagy "auto", állítsuk None-ra
+        if source_language == "" or source_language == "auto" or source_language == "Automatic":
+            source_language = None
 
-        return {
-            "translated_text": result["translatedText"],
-            "detected_language": result.get("detectedSourceLanguage", source_language),
-            "input_text": text,
-        }
+        try:
+            result = self.client.translate(text, target_language=target_language, source_language=source_language)
+
+            return {
+                "translated_text": result["translatedText"],
+                "detected_language": result.get("detectedSourceLanguage", source_language),
+                "input_text": text,
+            }
+        except Exception as e:
+            print(f"Fordítási hiba: {str(e)}")
+            return {
+                "translated_text": f"Hiba történt a fordítás során: {str(e)}",
+                "detected_language": None,
+                "input_text": text,
+            }
