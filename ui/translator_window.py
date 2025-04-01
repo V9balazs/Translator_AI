@@ -1,10 +1,10 @@
 import os
 
-import pyaudio
-from google.cloud import speech
 from PyQt6 import uic
-from PyQt6.QtCore import QThread, pyqtSignal, pyqtSlot
+from PyQt6.QtCore import pyqtSlot
 from PyQt6.QtWidgets import QMainWindow, QMessageBox
+
+from speech_recognision_thread import SpeechRecognitionThread
 
 
 class TranslatorWindow(QMainWindow):
@@ -12,12 +12,16 @@ class TranslatorWindow(QMainWindow):
     def __init__(self, translator):
         super().__init__()
         self.translator = translator
+
         ui_file = os.path.join(os.path.dirname(__file__), "main_window.ui")
         uic.loadUi(ui_file, self)
+
         self.languages = self.translator.get_language()
         self.setup_language_combos()
+
         self.speech_thread = None
         self.setup_speech_recognition()
+
         self.connect_signals()
 
     # Legördülő menübe nyelvek beállítása
@@ -67,7 +71,7 @@ class TranslatorWindow(QMainWindow):
                     source_lang = lang_mapping.get(source_lang, f"{source_lang}-{source_lang.upper()}")
 
                 # Beszédfelismerés szál létrehozása
-                self.speech_thread = SpeechRecognitionThread(source_lang)
+                self.speech_thread = SpeechRecognitionThread(language_code=source_lang)
                 self.speech_thread.textReady.connect(self.on_speech_recognized)
                 self.speech_thread.error.connect(self.on_speech_error)
                 self.speech_thread.start()
@@ -145,84 +149,3 @@ class TranslatorWindow(QMainWindow):
         # Kikapcsoljuk a beszédfelismerést
         self.Speech_To_Text_Button.setChecked(False)
         self.toggle_speech_recognition(False)
-
-
-class SpeechRecognitionThread(QThread):
-    textReady = pyqtSignal(str)
-    error = pyqtSignal(str)
-
-    def _innit__(self, language_code="hu-HU", parent=None):
-        super().__init__(parent)
-        self.language_code = language_code
-        self.running = False
-
-    # Nyelv beállítása
-    def set_language(self, language_code):
-        self.language_code = language_code
-
-    def run(self):
-        """Beszédfelismerés futtatása"""
-        import pyaudio
-        from google.cloud import speech
-
-        self.running = True
-
-        try:
-            # Hangfelvétel beállítása
-            audio_format = pyaudio.paInt16
-            channels = 1
-            rate = 16000
-            chunk = 1024
-
-            audio = pyaudio.PyAudio()
-            stream = audio.open(format=audio_format, channels=channels, rate=rate, input=True, frames_per_buffer=chunk)
-
-            # Google Speech kliens
-            client = speech.SpeechClient()
-
-            # Streaming felismerés konfigurálása
-            config = speech.RecognitionConfig(
-                encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
-                sample_rate_hertz=rate,
-                language_code=self.language_code,
-                enable_automatic_punctuation=True,
-            )
-            streaming_config = speech.StreamingRecognitionConfig(config=config, interim_results=True)
-
-            # Streaming felismerés indítása
-            def generate_requests():
-                yield speech.StreamingRecognizeRequest(streaming_config=streaming_config)
-
-                while self.running:
-                    data = stream.read(chunk, exception_on_overflow=False)
-                    yield speech.StreamingRecognizeRequest(audio_content=data)
-
-            responses = client.streaming_recognize(generate_requests())
-
-            for response in responses:
-                if not self.running:
-                    break
-
-                if not response.results:
-                    continue
-
-                result = response.results[0]
-
-                if result.is_final:
-                    transcript = result.alternatives[0].transcript
-                    self.textReady.emit(transcript)
-
-        except Exception as e:
-            self.error.emit(str(e))
-        finally:
-            if "stream" in locals():
-                stream.stop_stream()
-                stream.close()
-            if "audio" in locals():
-                audio.terminate()
-
-            self.running = False
-
-    def stop(self):
-        """Beszédfelismerés leállítása"""
-        self.running = False
