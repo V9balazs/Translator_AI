@@ -18,13 +18,17 @@ class SpeechRecognitionThread(QThread):
 
         try:
             # Hangfelvétel beállítása
-            audio_format = pyaudio.paInt16
-            channels = 1
-            rate = 16000
-            chunk = 1024
+            RATE = 16000
+            CHUNK = int(RATE / 10)  # 100ms
 
             audio = pyaudio.PyAudio()
-            stream = audio.open(format=audio_format, channels=channels, rate=rate, input=True, frames_per_buffer=chunk)
+            stream = audio.open(
+                format=pyaudio.paInt16,
+                channels=1,
+                rate=RATE,
+                input=True,
+                frames_per_buffer=CHUNK,
+            )
 
             # Google Speech kliens
             client = speech.SpeechClient()
@@ -32,39 +36,29 @@ class SpeechRecognitionThread(QThread):
             # Streaming felismerés konfigurálása
             config = speech.RecognitionConfig(
                 encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
-                sample_rate_hertz=rate,
+                sample_rate_hertz=RATE,
                 language_code=self.language_code,
                 enable_automatic_punctuation=True,
             )
             streaming_config = speech.StreamingRecognitionConfig(config=config, interim_results=True)
 
-            # Közvetlen megoldás: Külön létrehozzuk a konfiguráció kérést
-            config_request = speech.StreamingRecognizeRequest(streaming_config=streaming_config)
-
-            # Létrehozunk egy listát a kérésekhez
-            requests = [config_request]
-
-            # Adatgyűjtő függvény
+            # Streaming felismerés indítása - alternatív megoldás
             def audio_generator():
+                # Először a konfiguráció kérést küldjük el
+                yield speech.StreamingRecognizeRequest(streaming_config=streaming_config)
+
+                # Majd az audio adatokat
                 while self.running:
-                    data = stream.read(chunk, exception_on_overflow=False)
+                    data = stream.read(CHUNK, exception_on_overflow=False)
                     yield speech.StreamingRecognizeRequest(audio_content=data)
 
-            # Streaming felismerés indítása a közvetlen megoldással
-            # Először elküldjük a konfigurációt, majd az audio adatokat
-            responses = client.streaming_recognize(requests + list(audio_generator()))
+            # Létrehozzuk a generátort
+            audio_requests = audio_generator()
 
-            # # Streaming felismerés indítása
-            # def generate_requests():
-            #     yield speech.StreamingRecognizeRequest(streaming_config=streaming_config)
+            # Meghívjuk a streaming_recognize metódust a generátorral
+            responses = client.streaming_recognize(audio_requests)
 
-            #     while self.running:
-            #         data = stream.read(chunk, exception_on_overflow=False)
-            #         yield speech.StreamingRecognizeRequest(audio_content=data)
-
-            # requests_iterator = generate_requests()
-            # responses = client.streaming_recognize(requests_iterator)
-
+            # Feldolgozzuk a válaszokat
             for response in responses:
                 if not self.running:
                     break

@@ -76,9 +76,9 @@
    <widget class="QPushButton" name="Speech_To_Text_Button">
     <property name="geometry">
      <rect>
-      <x>360</x>
+      <x>340</x>
       <y>260</y>
-      <width>101</width>
+      <width>121</width>
       <height>41</height>
      </rect>
     </property>
@@ -88,7 +88,7 @@
      </font>
     </property>
     <property name="text">
-     <string>Speech to text</string>
+     <string>Speech to text OFF</string>
     </property>
     <property name="checkable">
      <bool>true</bool>

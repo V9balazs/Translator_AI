@@ -76,6 +76,8 @@ class TranslatorWindow(QMainWindow):
                 self.speech_thread.error.connect(self.on_speech_error)
                 self.speech_thread.start()
 
+                self.Speech_To_Text_Button.setText("Speech to text ON")
+
             except ImportError as e:
                 QMessageBox.warning(
                     self,
@@ -92,6 +94,8 @@ class TranslatorWindow(QMainWindow):
             if self.speech_thread and self.speech_thread.running:
                 self.speech_thread.stop()
                 self.speech_thread = None
+
+            self.Speech_To_Text_Button.setText("Speech to text ON")
 
     # Fordítás folyamat kezdeményezése
     @pyqtSlot()
