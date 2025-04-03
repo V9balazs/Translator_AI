@@ -91,11 +91,11 @@ class TranslatorWindow(QMainWindow):
                 self.Speech_To_Text_Button.setChecked(False)
         else:
             # Beszédfelismerés kikapcsolása
+            self.Speech_To_Text_Button.setText("Speech to text OFF")
+
             if self.speech_thread and self.speech_thread.running:
                 self.speech_thread.stop()
                 self.speech_thread = None
-
-            self.Speech_To_Text_Button.setText("Speech to text ON")
 
     # Fordítás folyamat kezdeményezése
     @pyqtSlot()

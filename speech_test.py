@@ -1,5 +1,6 @@
 import io
 import os
+import sys
 
 import pyaudio
 from google.cloud import speech
@@ -59,8 +60,15 @@ def transcribe_microphone_stream():
 
             transcript = result.alternatives[0].transcript
 
-            if result.is_final:
-                print(f"Felismert szöveg: {transcript}")
+            if not result.is_final:
+                # Felülírjuk az aktuális sort a terminálban
+                sys.stdout.write("\r" + transcript + "...")
+                sys.stdout.flush()
+            else:
+                # Végleges eredmény esetén új sorba írunk
+                sys.stdout.write("\r" + transcript + "\n")
+                sys.stdout.flush()
+
     except KeyboardInterrupt:
         print("Felismerés leállítva.")
     finally:
